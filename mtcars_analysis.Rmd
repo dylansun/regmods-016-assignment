@@ -1,0 +1,99 @@
+---
+title: "Regmods-016 Assignment"
+author: "Lili Sun"
+date: "21/12/2014"
+output:
+  pdf_document:
+    fig_caption: yes
+    fig_width: 4
+    keep_tex: no
+documentclass: article
+classoption: a4paper
+---
+
+# Executive Summary
+
+When considering mpg and am alone, we fit it to a linear model and find the coefficient is about 7.245. That shows the manual transmission cars are 7.2 mpg more efficient than the automatics.
+When considering mpg with other variables, we found the most significant varible is `am`
+
+
+# Basic Analysis
+
+```{r "t.test", echo=FALSE}
+data(mtcars)
+am_factor <- as.factor(mtcars$am)
+levels(am_factor) <- c("Automatic","Manual")
+t1 <- t.test(mtcars$mpg ~ am_factor)
+```
+The relationship of interest is that between `mpg` and transmission `am`. The boxplot (appendix 1, fig. 1) shows a clear increase in the median mpg for manual transmission over automatic transmission. The normal q-q plots (appendix 1, fig. 2) show that the mpg of automatic and manual transmission cars in the data set is approximately normally distributed. The Welch Two Sample t-test suggests a significant difference between the means of the two groups (P = `r sprintf("%0.4f", t1$p.value)`, two sided).
+
+# Simple Model
+
+```{r}
+simple <- lm(mpg ~ am, data = mtcars)
+simple$coefficients
+```
+The relationsip shown above can be expressed as a simple linear model: $mpg = 7.245am + 17.147$. The model resulting in an intercept of 17.147, which is the mean mpg of automatic type. The coefficient is 7.245, which is the increase of manual type over automatic type. 
+
+# Full Model
+
+```{r}
+full <- lm(mpg ~ ., data = mtcars)
+full$coefficients
+```
+The relationship shown above can be expressed as simple linear model:
+$mpg = \Sigma_i\beta_ix_i + c$, here $x_i$ is the variables, and $\beta_i$ is their responding coefficient.
+As shown above, the most significant variable is `am`.
+
+# Stepwise Regression
+```{r}
+stepFarward <- step(simple, direction="forward", trace = 0,  scope=(~ cyl + disp + hp + drat + wt + qsec + vs + am + gear + carb))
+stepBackward <- step(full, direction = "backward", trace = 0)
+stepFarward$coefficients
+stepBackward$coefficients
+```
+We use forward and backward regressor selection. The forward results in a model: `mpg ~ am+hp+wt+qsec`. While the backward results in a model: `mpg ~ wt+qsec+am`
+
+# Model Selection
+Here we use the result of farward reression.
+
+# Diagnostics
+```{r}
+round(dfbetas(stepFarward),4)
+round(hatvalues(stepFarward),4)
+```
+\pagebreak
+
+# Appendix 1: Plots
+
+## Simple comparison
+
+```{r "boxplot", echo=FALSE, fig.cap="Boxplot for MPG by am"}
+boxplot(mtcars$mpg ~ mtcars$am)
+```
+
+## Normal q-q plot
+
+```{r "qqplot", echo=FALSE, fig.cap='Normal q-q plot for MPG by transmission type', fig.width=8}
+par(mfrow = c(1,2)) 
+qqnorm(scale(mtcars$mpg[mtcars$am == "0"]), main = "Automatic")
+abline(0,1)
+qqnorm(scale(mtcars$mpg[mtcars$am == "1"]), main = "Manual")
+abline(0,1)
+```
+
+
+
+
+\pagebreak
+
+## Diagnostic plots
+
+```{r "diagnostics", echo=FALSE, fig.width=8, fig.height=8, fig.cap="Model diagnostics plots"}
+#par(mfrow = c(2, 2))
+#plot(mInt)
+```
+
+
+
+
